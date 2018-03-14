@@ -1,5 +1,5 @@
 # Whodis - Easy to use Whois client for PHP
-#Danger: WIP - this project will eat your cat
+# Danger: WIP - this project will eat your cat
 
 [![Latest Version](https://img.shields.io/github/release/php-http/package.svg?style=flat-square)](https://github.com/php-http/package/releases)
 [![Build Status](https://img.shields.io/travis/php-http/package.svg?style=flat-square)](https://travis-ci.org/php-http/package)
