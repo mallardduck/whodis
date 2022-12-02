@@ -1,12 +1,14 @@
 {
     "name": "mallardduck/whodis",
     "description": "A simple to use whois client for PHP",
-    "keywords": [
-        "boilerplate",
-        "http"
-    ],
-    "homepage": "https://github.com/mallardduck",
     "license": "MIT",
+    "keywords": [
+        "domain",
+        "lookup",
+        "whois",
+        "whodis",
+        "whois-client"
+    ],
     "authors": [
         {
             "name": "Dan Pock",
@@ -15,23 +17,30 @@
             "role": "Developer"
         }
     ],
+    "homepage": "https://github.com/mallardduck",
     "require": {
-        "php": "^7.4 || ^8.0",
+        "php": "^8.0",
+        "jeremykendall/php-domain-parser": "^6.1",
         "mallardduck/whois-client": "dev-3.0-main",
-        "true/punycode": "^2.1"
+        "mallardduck/whois-server-list": "^2.0",
+        "symfony/polyfill-intl-idn": "^1.27"
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
-        "infection/infection": "^0.23.0",
+        "infection/infection": "^0.26",
         "pestphp/pest": "^1.11",
         "phpcompatibility/php-compatibility": "^9.3",
-        "phpstan/phpstan": "^0.12.93",
+        "phpstan/phpstan": "^1.9",
         "phpunit/phpunit": "^9.5",
-        "squizlabs/php_codesniffer": "^3.6"
+        "squizlabs/php_codesniffer": "^3.6",
+        "symfony/var-dumper": "^6.2",
+        "vimeo/psalm": "^5.0"
     },
-    "config": {
-        "sort-packages": true
+    "suggest": {
+        "ext-intl": "If installed will use this instead of symfony polyfill."
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "MallardDuck\\Whodis\\": "src/"
@@ -42,8 +51,14 @@
             "MallardDuck\\Whodis\\Test\\": "tests"
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "infection/extension-installer": true,
+            "pestphp/pest-plugin": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
     "scripts": {
         "check-style": "@phpcs --runtime-set ignore_errors_on_exit 1 --runtime-set ignore_warnings_on_exit 1 src tests",
         "fix-style": "@phpcbf --runtime-set ignore_errors_on_exit 1 --runtime-set ignore_warnings_on_exit 1 src tests",
