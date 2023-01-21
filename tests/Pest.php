@@ -39,7 +39,9 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function filter_update_at(string $results): string
 {
-    // ..
+    $lines = explode(PHP_EOL, $results);
+    $lines = array_map(fn($line) => str_contains($line, ">>> Last update of") ? ">>> TimeSTAMP <<<" : $line, $lines);
+    return implode(PHP_EOL, $lines);
 }
