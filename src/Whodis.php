@@ -61,17 +61,39 @@ final class Whodis
         if ($domainTLD !== '') {
             $whoisServer = $this->whoisLocator->getWhoisServer($domainTLD);
         }
-        $results = [];
         // 4. Make a requests (per follow option) to the whois server
-        while ($follow > 1) {
-            $whoisClient = new Client($whoisServer);
-            $results[] = $whoisClient->makeRequest($parsedDomain);
-            $follow--;
-        };
+        $results = $this->followingWhoisLookup($whoisServer, $parsedDomain, $follow);
 
         if ($fullResults) {
-            $concat = PHP_EOL;
-            return implode($concat, $results);
+            return $this->prepareFullResults($results);
+        }
+
+        return $results[array_key_last($results)];
+        // 5. Parse the response from the whois server (TODO: V2)
+    }
+
+    public function rootLookup(
+        string $domain,
+        int $follow = 2,
+        bool $fullResults = false
+    ): string {
+        if (empty($domain)) {
+            throw new MissingArgException('Must provide a domain name when using lookup method.');
+        }
+        if ($follow < 1) {
+            throw new RuntimeException('The follow number must be a positive integer.');
+        }
+
+        // 1. Parse the domain:
+        //  a. Determine the searchable hostname
+        //  b. Convert searchable hostname from IDN to ascii with idn_to_ascii
+        $parsedDomain = $this->parseWhoisDomain($domain);
+        $whoisServer = 'whois.iana.org';
+        // 2. Make a requests (per follow option) to the whois server
+        $results = $this->followingWhoisLookup($whoisServer, $parsedDomain, $follow);
+
+        if ($fullResults) {
+            return $this->prepareFullResults($results);
         }
 
         return $results[array_key_last($results)];
@@ -138,5 +160,60 @@ final class Whodis
          */
         $resolvedDomain = $this->domainParser->resolve($domain);
         return $resolvedDomain->suffix()->toString();
+    }
+
+    /**
+     * @param array $results
+     *
+     * @return string
+     */
+    private function prepareFullResults(array $results): string
+    {
+        $res = '';
+        $keys = array_keys($results);
+        foreach (array_values($results) as $index => $result) {
+            if ($index > 0) {
+                $server = $keys[$index];
+                $res .= '# ' . $server . PHP_EOL;
+                $res .= ' ' . PHP_EOL;
+            }
+            $res .= $result;
+        }
+        return $res;
+    }
+
+    /**
+     * @param string $whoisServer
+     * @param string $parsedDomain
+     * @param int    $follow
+     * @param        $matches
+     * @return array
+     * @throws SocketClientException
+     */
+    private function followingWhoisLookup(string $whoisServer, string $parsedDomain, int $follow): array
+    {
+        $results = [];
+        do {
+            $whoisClient = new Client($whoisServer);
+            $res = $whoisClient->makeRequest($parsedDomain);
+            $results[$whoisServer] = $res;
+            $follow--;
+            if ($follow === 0) {
+                break;
+            }
+            // phpcs:disable
+            preg_match(
+                '/(ReferralServer|Registrar Whois|Whois Server|WHOIS Server|Registrar WHOIS Server|whois):[^\S\n]*(r?whois:\/\/)?(.*)/',
+                $res,
+                $matches,
+            );
+            // phpcs:enable
+            if (empty($matches) || $whoisServer === trim($matches[3])) {
+                break;
+            }
+            $whoisServer = trim($matches[3]);
+            // Find the next whois server...
+        } while ($follow >= 1);
+        return $results;
     }
 }
