@@ -5,10 +5,13 @@ namespace MallardDuck\Whodis;
 use MallardDuck\Whodis\Exceptions\MissingArgException;
 use MallardDuck\Whodis\Exceptions\UnknownWhoisException;
 use MallardDuck\Whois\Client;
+use MallardDuck\Whois\Exceptions\SocketClientException;
+use MallardDuck\WhoisDomainList\Exceptions\UnknownTopLevelDomain;
 use MallardDuck\WhoisDomainList\PslServerLocator;
 use Pdp\ResolvedDomainName;
 use Pdp\Rules;
 use Pdp\Suffix;
+use RuntimeException;
 
 final class Whodis
 {
@@ -26,14 +29,25 @@ final class Whodis
 
     /**
      * Performs a Whois look up on the domain provided.
-     * @param  string $domain The domain being looked up via whois.
+     *
+     * @param string $domain The domain being looked up via whois.
+     * @param int    $follow Number of times to follow Whois Server redirects.
+     * @param bool   $fullResults Configures response for either the final response or all responses [Default: false].
      *
      * @return string         The output of the Whois look up.
+     * @throws UnknownTopLevelDomain
+     * @throws SocketClientException|UnknownWhoisException
      */
-    public function lookup(string $domain)
-    {
+    public function lookup(
+        string $domain,
+        int $follow = 2,
+        bool $fullResults = false
+    ): string {
         if (empty($domain)) {
-            throw new MissingArgException("Must provide a domain name when using lookup method.");
+            throw new MissingArgException('Must provide a domain name when using lookup method.');
+        }
+        if ($follow < 1) {
+            throw new RuntimeException('The follow number must be a positive integer.');
         }
 
         // 1. Parse the domain:
@@ -42,15 +56,26 @@ final class Whodis
         $parsedDomain = $this->parseWhoisDomain($domain);
         // 2. Determine what the TLD for the domain is
         $domainTLD = $this->getTopLevelDomain($parsedDomain);
-        // 3. Find the whois server for the TLD
+        // 3. Find the whois server for the TLD, or default to IANA.
         $whoisServer = 'whois.iana.org';
         if ($domainTLD !== '') {
             $whoisServer = $this->whoisLocator->getWhoisServer($domainTLD);
         }
-        // 4. Make a request to the whois server
-        $whoisClient = new Client($whoisServer);
-        return $whoisClient->makeRequest($parsedDomain);
-        // 5. Parse the response from the whois server?
+        $results = [];
+        // 4. Make a requests (per follow option) to the whois server
+        while ($follow > 1) {
+            $whoisClient = new Client($whoisServer);
+            $results[] = $whoisClient->makeRequest($parsedDomain);
+            $follow--;
+        };
+
+        if ($fullResults) {
+            $concat = PHP_EOL;
+            return implode($concat, $results);
+        }
+
+        return $results[array_key_last($results)];
+        // 5. Parse the response from the whois server (TODO: V2)
     }
 
     /**
@@ -60,6 +85,7 @@ final class Whodis
      *
      * @return string Returns the parsed domain.
      * @throws MissingArgException
+     * @throws UnknownWhoisException
      */
     protected function parseWhoisDomain(string $domain): string
     {
