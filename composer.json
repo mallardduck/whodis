@@ -21,7 +21,7 @@
     "require": {
         "php": "^8.0",
         "jeremykendall/php-domain-parser": "^6.1",
-        "mallardduck/whois-client": "dev-3.0-main",
+        "mallardduck/whois-client": "3.0.0",
         "mallardduck/whois-server-list": "^2.0",
         "symfony/polyfill-intl-idn": "^1.27"
     },
@@ -33,7 +33,7 @@
         "phpstan/phpstan": "^1.9",
         "phpunit/phpunit": "^9.5",
         "squizlabs/php_codesniffer": "^3.6",
-        "symfony/var-dumper": "^6.2",
+        "symfony/var-dumper": "^5.4",
         "vimeo/psalm": "^5.0"
     },
     "suggest": {
