@@ -62,7 +62,7 @@ final class Whodis
             $whoisServer = $this->whoisLocator->getWhoisServer($domainTLD);
         }
         // 4. Make a requests (per follow option) to the whois server
-        $results = $this->followingWhoisLookup($whoisServer, $parsedDomain, $follow);
+        $results = $this->followingWhoisLookup($whoisServer, $parsedDomain, $follow, $domainTLD);
 
         if ($fullResults) {
             return $this->prepareFullResults($results);
@@ -88,9 +88,10 @@ final class Whodis
         //  a. Determine the searchable hostname
         //  b. Convert searchable hostname from IDN to ascii with idn_to_ascii
         $parsedDomain = $this->parseWhoisDomain($domain);
-        $whoisServer = 'whois.iana.org';
-        // 2. Make a requests (per follow option) to the whois server
-        $results = $this->followingWhoisLookup($whoisServer, $parsedDomain, $follow);
+        // 2. Determine what the TLD for the domain is
+        $domainTLD = $this->getTopLevelDomain($parsedDomain);
+        // 3. Make a requests (per follow option) to the whois server
+        $results = $this->followingWhoisLookup('whois.iana.org', $parsedDomain, $follow, $domainTLD);
 
         if ($fullResults) {
             return $this->prepareFullResults($results);
@@ -190,17 +191,44 @@ final class Whodis
      * @return array
      * @throws SocketClientException
      */
-    private function followingWhoisLookup(string $whoisServer, string $parsedDomain, int $follow): array
+    private function followingWhoisLookup(string $whoisServer, string $parsedDomain, int $follow, string $tld): array
     {
+
         $results = [];
         do {
             $whoisClient = new Client($whoisServer);
-            $res = $whoisClient->makeRequest($parsedDomain);
+            $request = $parsedDomain;
+            if (str_contains($whoisServer, 'denic') && $tld === 'de') {
+                $request = '-T dn,ace -C US-ASCII ' . $request;
+            }
+            $res = $whoisClient->makeRequest($request);
+            if ($res === "") {
+                throw new \RuntimeException(
+                    sprintf(
+                        "Received empty response from %s for %s; often a sign of rate limiting.",
+                        $whoisServer,
+                        $parsedDomain
+                    )
+                );
+            }
             $results[$whoisServer] = $res;
-            $follow--;
+
+            // phpcs:disable
+            $domainRegex = sprintf(
+              '%s|%s',
+                $parsedDomain,
+                strtoupper($parsedDomain)
+            );
+            $domainMatch = preg_grep('/(Domain Name|domain):[^\S\n]*(' . $domainRegex . ')(.*)/', explode(PHP_EOL, $res));
+            // phpcs:enable
+            if (!empty($domainMatch)) {
+                $follow--;
+            }
+
             if ($follow === 0) {
                 break;
             }
+
             // phpcs:disable
             preg_match(
                 '/(ReferralServer|Registrar Whois|Whois Server|WHOIS Server|Registrar WHOIS Server|whois):[^\S\n]*(r?whois:\/\/)?(.*)/',
@@ -214,6 +242,7 @@ final class Whodis
             $whoisServer = trim($matches[3]);
             // Find the next whois server...
         } while ($follow >= 1);
+
         return $results;
     }
 }
