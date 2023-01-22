@@ -175,6 +175,7 @@ final class Whodis
         foreach (array_values($results) as $index => $result) {
             if ($index > 0) {
                 $server = $keys[$index];
+                $res .= ' ' . PHP_EOL;
                 $res .= '# ' . $server . PHP_EOL;
                 $res .= ' ' . PHP_EOL;
             }
