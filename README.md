@@ -1,7 +1,10 @@
 # Whodis - Easy to use Whois client for PHP
 
-[![Latest Version](https://img.shields.io/github/release/php-http/package.svg?style=flat-square)](https://github.com/mallardduck/whodis/releases)
-[![Total Downloads](https://img.shields.io/packagist/dt/php-http/package.svg?style=flat-square)](https://packagist.org/packages/mallardduck/whodis)
+[![Source Code](https://img.shields.io/static/v1?label=source&message=mallardduck/whodis&color=blue&style=for-the-badge)](https://packagist.org/packages/mallardduck/whodis)
+[![License](https://img.shields.io/packagist/l/mallardduck/whodis?style=for-the-badge)](https://packagist.org/packages/mallardduck/whodis)
+[![PHP Version](https://img.shields.io/packagist/php-v/mallardduck/whodis.svg?style=for-the-badge)](https://packagist.org/packages/mallardduck/whodis)
+[![Latest Stable Version](https://img.shields.io/packagist/v/mallardduck/whodis?logo=packagist&label=Release&style=for-the-badge)](https://packagist.org/packages/mallardduck/whodis)
+[![Total Download Count](https://img.shields.io/packagist/dt/mallardduck/whodis?logo=packagist&style=for-the-badge)](https://packagist.org/packages/mallardduck/whodis/stats)
 
 ## Purpose
 
